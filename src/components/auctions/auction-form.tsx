@@ -1,71 +1,98 @@
-import { Typography, Box, Button, TextField, Grid } from '@mui/material';
-import { useRef } from 'react';
+import { Typography, Box, Button, Grid, Paper } from '@mui/material';
+import { Formik, Form, Field } from 'formik';
+import { TextField } from 'formik-mui';
+import * as Yup from 'yup';
 import { AuctionService } from '../../services/auctions-service';
+import { useUser } from '../../store/UserContext';
 
-function AuctionsForm() {
-  // Use a ref to access the form element
-  const formRef = useRef<HTMLFormElement>(null);
+// Define validation schema using Yup
+const validationSchema = Yup.object({
+  auctionName: Yup.string().required('Auction name is required'),
+  reservePrice: Yup.number().positive('Reserve price must be a positive number').required('Reserve price is required'),
+  itemDescription: Yup.string().required('Item description is required'),
+});
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault(); // Prevent default form submission behavior
-
-    if (formRef.current) {
-      const formData = new FormData(formRef.current);
-      const newItem = {
-        auctionName: formData.get('auctionName') as string,
-        reservePrice: parseFloat(formData.get('reservePrice') as string),
-        //bidderName: , // Assuming this is static or managed elsewhere
-        items: [
-          {
-            itemDescription: formData.get('itemDescription') as string,
-          },
-        ],
-      };
-
-      try {
-        const addedItem = await AuctionService.addAuctionItem(newItem);
-        // Optionally reset the form or handle the added item
-        formRef.current.reset();
-      } catch (error) {
-        console.error('Error adding auction item:', error);
-      }
-    }
-  };
-
+function AuctionsForm({ gridRefresh }) {
+    const { user } = useUser();
   return (
-    <Box component="form" ref={formRef} onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
-      <Typography variant="h5" gutterBottom>
-        Add new
-      </Typography>
-      <Grid container spacing={2} alignItems="center">
-        <Grid item xs={12} sm={4}>
-          <TextField
-            fullWidth
-            label="Auction Name"
-            name="auctionName" // Name attribute is important for FormData to work
-          />
-        </Grid>
-        <Grid item xs={12} sm={3}>
-          <TextField
-            fullWidth
-            label="Reserve Price"
-            type="number"
-            name="reservePrice"
-          />
-        </Grid>
-        <Grid item xs={12} sm={3}>
-          <TextField
-            fullWidth
-            label="Item Description"
-            name="itemDescription"
-          />
-        </Grid>
-        <Grid item xs={12} sm={2}>
-          <Button type="submit" variant="contained">Add Item</Button>
-        </Grid>
-      </Grid>
-    </Box>
+    <Paper sx={{ p: 2, mt: 2 }}>
+      <Formik
+        initialValues={{
+          auctionName: '',
+          reservePrice: '',
+          itemDescription: '',
+        }}
+        validationSchema={validationSchema}
+        onSubmit={async (values, { setSubmitting, resetForm }) => {
+          try {
+            const addedItem = await AuctionService.addAuctionItem({
+              ...values,
+              reservePrice: parseFloat(values.reservePrice),
+              userId: user.name,
+              items: [{itemDescription:values.itemDescription}]
+            });
+            if (addedItem) {
+              gridRefresh(); // Invoke the parent component's refresh function
+              resetForm(); // Reset the form after successful submission
+            }
+          } catch (error) {
+            console.error('Error adding auction item:', error);
+          } finally {
+            setSubmitting(false);
+          }
+        }}
+      >
+        {({ submitForm, isSubmitting, handleChange, handleBlur, values, touched, errors }) => (
+          <Form>
+            <Box sx={{ mt: 1 }}>
+              <Typography variant="h5" gutterBottom>
+                Add New
+              </Typography>
+              <Grid container spacing={2} direction="column">
+                <Grid item xs={12}>
+                  <Field
+                    component={TextField}
+                    name="auctionName"
+                    label="Auction Name"
+                    fullWidth
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <Field
+                    component={TextField}
+                    name="reservePrice"
+                    label="Reserve Price"
+                    type="number"
+                    fullWidth
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <Field
+                    component={TextField}
+                    name="itemDescription"
+                    label="Item Description"
+                    fullWidth
+                    multiline
+                    rows={4}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <Button 
+                    onClick={submitForm} 
+                    variant="contained" 
+                    fullWidth
+                    disabled={isSubmitting}
+                  >
+                    Add Item
+                  </Button>
+                </Grid>
+              </Grid>
+            </Box>
+          </Form>
+        )}
+      </Formik>
+    </Paper>
   );
-};
+}
 
 export default AuctionsForm;

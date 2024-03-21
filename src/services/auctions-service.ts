@@ -1,8 +1,10 @@
+import { AppConfig } from "../config/app-config";
 
 export class AuctionService {
    static async fetchAuctionItems(page: number, pageSize:number): Promise<AuctionItem[]> {
     try {
-      const response = await fetch('http://localhost:3000/auctions');
+      console.log("logged twice")
+      const response = await fetch(`${AppConfig.baseUrl}/auctions?page=${page}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -16,7 +18,7 @@ export class AuctionService {
 
 
   static async addAuctionItem(newItem: AuctionItem): Promise<AuctionItem> {
-    const response = await fetch('http://localhost:3000/auctions', {
+    const response = await fetch(`${AppConfig.baseUrl}/auctions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -33,7 +35,7 @@ export class AuctionService {
 
   static async postBid(auctionId: number, maxAutoBidAmount: number, bidderName:string): Promise<any> {
     // Implementation details may vary based on your API
-    const response = await fetch(`http://localhost:3000/bids`, {
+    const response = await fetch(`${AppConfig.baseUrl}/bids`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -45,8 +47,11 @@ export class AuctionService {
       }),
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+  if (!response.ok) {
+      // If the response is not ok, parse the response body to get the error message
+      const errorResponse = await response.json(); // Assuming the server responds with JSON
+      // Throw an error or return a structured error object/message
+      return (errorResponse.message || 'An error occurred while posting the bid.');
     }
 
     return await response.text();

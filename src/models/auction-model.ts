@@ -5,9 +5,11 @@ interface Item {
 
 interface AuctionItem {
   auctionItemId?: number;
-  bidderName: string;
+  bidderName?: string;
+  userId: string;
   currentBid?: number;
   reservePrice: number;
   auctionName: string;
   items: Item[];
+  totalRows?:number;
 }

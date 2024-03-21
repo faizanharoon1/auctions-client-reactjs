@@ -6,8 +6,13 @@ import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import Button from '@mui/material/Button';
 import { styled } from '@mui/system';
-import { Box, Container, Typography } from '@mui/material';
+import { Box, Container, Snackbar, Typography } from '@mui/material';
 import AdbIcon from '@mui/icons-material/Adb';
+import { useUser } from './store/UserContext';
+import { UserPicker } from './components/users/UserPicker';
+import { useSSE } from './hooks/outbid-sse-hook';
+import { AppConfig } from './config/app-config';
+import { useEffect, useState } from 'react';
 
 const LinkBehavior = styled(Link)({
   textDecoration: 'none',
@@ -15,13 +20,34 @@ const LinkBehavior = styled(Link)({
 });
 
 function App() {
+   const { user } = useUser();
+   const [isSnackbarOpen, setIsSnackbarOpen] = useState(false);
+     const [outbidStatusMessage, setOutbidStatusMessage] = useState(""); 
+//hook SSE
+ const message = useSSE(`${AppConfig.baseUrl}/bids/outbid/sse?userId=${user.name}`);
+
+ useEffect(() => {
+    if (message) {
+      setOutbidStatusMessage(message);
+      setIsSnackbarOpen(true); // Open the Snackbar when a new message is received
+    }
+  }, [message]);
+ 
   return (
     <Container>
     <BrowserRouter>
 
  <Box sx={{ flexGrow: 1 }}>
       <AppBar position="static">
+              <Snackbar
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+  open={isSnackbarOpen}
+  autoHideDuration={6000} // auto hide after 6000ms
+  onClose={() => setIsSnackbarOpen(false)}
+  message={outbidStatusMessage}
+      sx={{ '& .MuiSnackbarContent-root': { backgroundColor: 'red' } }} // Apply green background
     
+/>
         <Toolbar disableGutters>
           <AdbIcon sx={{ display: { xs: 'none', md: 'flex' }, mr: 1 }} />
           <Typography
@@ -31,19 +57,21 @@ function App() {
             href="#app-bar-with-responsive-menu"
             sx={{
               mr: 2,
-              display: { xs: 'none', md: 'flex' },
-              fontFamily: 'monospace',
-              fontWeight: 700,
-              letterSpacing: '.3rem',
+              fontWeight: 300,
               color: 'inherit',
               textDecoration: 'none',
+              
             }}
           >
-            Blue Bay  
+            Red Bay   
+            <div>
+ 
+    </div>
           </Typography>
          <Button color="inherit" component={LinkBehavior} to="/">Home</Button>
-          <Button color="inherit" component={LinkBehavior} to="/auctions">Auctions</Button>
-          {/* Add more navigation buttons as needed */}
+          <Button sx={{ flexGrow: 1, display: { xs: 'none', sm: 'block' }}} color="inherit" component={LinkBehavior} to="/auctions">Auctions</Button>
+          <UserPicker />
+          
         </Toolbar>
       </AppBar>
     </Box>

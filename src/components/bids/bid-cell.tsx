@@ -1,5 +1,6 @@
 import { Box, TextField, Button } from '@mui/material';
 import { GridRenderCellParams } from '@mui/x-data-grid';
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import { useState } from 'react';
 
 interface BidCellProps {
@@ -25,9 +26,14 @@ function BidCell({ params, onBid }:BidCellProps) {
         value={bidValue}
         onChange={(e) => setBidValue(Number(e.target.value))}
       />
-      <Button variant="contained" color="primary" onClick={handleBid}>
-        Bid
-      </Button>
+ <Button
+      variant="contained"
+      color="success"
+      onClick={handleBid}
+      startIcon={<AttachMoneyIcon />}
+    >
+      Bid
+    </Button>
     </Box>
   );
 };
